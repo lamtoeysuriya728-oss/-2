@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สรุปผลงานกลุ่มการตลาด โซน 2 (Yearly Overview)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Font Noto Sans Thai -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Noto Sans Thai', sans-serif; }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; }
+            .shadow-sm, .shadow-md { box-shadow: none !important; }
+            .print-break { page-break-before: always; }
+        }
+        
+        /* Transitions */
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        
+        .loading-overlay { backdrop-filter: blur(2px); background: rgba(255,255,255,0.8); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 pb-10 print:pb-0 relative">
+
+    <!-- Loading Indicator -->
+    <div id="loading" class="fixed inset-0 z-50 flex items-center justify-center loading-overlay hidden">
+        <div class="bg-white p-6 rounded-xl shadow-xl flex flex-col items-center">
+            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-3"></div>
+            <p class="text-sm font-medium text-slate-600" id="loading-text">กำลังประมวลผล...</p>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300">
+        <div class="bg-slate-800 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <i id="toast-icon" data-lucide="info" class="w-5 h-5 text-blue-400"></i>
+            <div>
+                <h4 class="font-bold text-sm" id="toast-title">Notification</h4>
+                <p class="text-xs text-slate-300" id="toast-message">Message details</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-20 border-b border-gray-200 print:static print:border-none">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3 w-full sm:w-auto cursor-pointer" onclick="showYearView()">
+                    <div class="p-2.5 bg-blue-600 rounded-lg shadow-md text-white print:hidden hover:bg-blue-700 transition-colors">
+                        <i data-lucide="layout-grid" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">ผลงานกลุ่มการตลาด โซน 2</h1>
+                        <div class="flex flex-wrap items-center gap-2 mt-1 no-print">
+                            <span id="connection-status" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                                <i data-lucide="cloud-off" class="w-3 h-3"></i> Offline Mode
+                            </span>
+                            <span class="text-xs text-gray-400 flex items-center gap-1">
+                                <i data-lucide="calendar" class="w-3 h-3"></i> ปี 2569
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2 w-full sm:w-auto no-print">
+                    <button id="btn-back" onclick="showYearView()" class="hidden text-slate-600 bg-white hover:bg-slate-50 border border-slate-300 px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i> กลับหน้าภาพรวม
+                    </button>
+                    <button onclick="window.print()" class="text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm font-medium">
+                        <i data-lucide="printer" class="w-4 h-4"></i> พิมพ์
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+        <!-- VIEW: YEARLY OVERVIEW (Calendar) -->
+        <div id="year-view" class="fade-in">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-slate-800">เลือกเดือนที่ต้องการดูข้อมูล</h2>
+                <p class="text-slate-500 mt-2">คลิกที่เดือนเพื่อดูรายละเอียดผลงานรายบุคคลและรายทีม</p>
+            </div>
+
+            <!-- Month Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-10">
+                <!-- Javascript will inject months here -->
+                <div id="month-grid-container" class="contents"></div>
+            </div>
+
+            <!-- Yearly Trend Chart -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-slate-500"></i>
+                    แนวโน้มภาพรวมทั้งปี (Yearly Trend)
+                </h3>
+                <div id="year-chart-container" class="h-64 w-full flex items-end justify-between space-x-2 sm:space-x-4 px-2 select-none">
+                    <!-- Bars injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: MONTHLY DETAIL (Hidden by default) -->
+        <div id="month-view" class="hidden fade-in">
+            
+            <!-- Context Header -->
+            <div class="flex items-center justify-between mb-6 bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white p-2 rounded-lg shadow-sm text-blue-600 font-bold text-xl w-12 h-12 flex items-center justify-center border border-blue-100" id="current-month-badge">
+                        ม.ค.
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-blue-900" id="current-month-title">มกราคม 2569</h2>
+                        <p class="text-xs text-blue-600 flex items-center gap-1">
+                            <i data-lucide="database" class="w-3 h-3"></i> ข้อมูลจาก Tab: <span id="current-sheet-name" class="font-bold">ม.ค.</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="text-right hidden sm:block">
+                    <p class="text-xs text-slate-400">สถานะข้อมูล</p>
+                    <p class="text-sm font-bold text-green-600 flex items-center justify-end gap-1">
+                        <i data-lucide="check-circle-2" class="w-4 h-4"></i> พร้อมใช้งาน
+                    </p>
+                </div>
+            </div>
+
+            <!-- KPI Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 print:grid-cols-4">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 relative overflow-hidden group hover:border-blue-200 transition-all">
+                    <div class="relative">
+                        <p class="text-sm font-semibold text-slate-500">เบี้ยปีแรก (FYP)</p>
+                        <h3 class="text-2xl font-bold text-slate-900 mt-2" id="kpi-fyp">-</h3>
+                        <p class="text-xs text-slate-400 mt-2">ยอดขายรวมรายเดือน</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 hover:border-purple-200 transition-all">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-500">เทียบเป้าหมาย</p>
+                            <h3 class="text-2xl font-bold mt-2 text-slate-900" id="kpi-percent">-</h3>
+                        </div>
+                        <div class="p-2 bg-purple-50 rounded-lg text-purple-600">
+                            <i data-lucide="target" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-2 mt-4 overflow-hidden">
+                        <div id="progress-bar" class="bg-gray-300 h-2 rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 hover:border-emerald-200 transition-all">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-500">ฝ่าย Active</p>
+                            <h3 class="text-2xl font-bold text-slate-900 mt-2" id="kpi-active-units">-</h3>
+                        </div>
+                        <div class="p-2 bg-emerald-50 rounded-lg text-emerald-600">
+                            <i data-lucide="briefcase" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-500 mt-4" id="kpi-active-desc">-</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 hover:border-orange-200 transition-all">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-500">Top Team</p>
+                            <h3 class="text-lg font-bold text-slate-900 mt-2 truncate w-full" id="kpi-top-team">-</h3>
+                        </div>
+                        <div class="p-2 bg-orange-50 rounded-lg text-orange-600">
+                            <i data-lucide="award" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <p class="text-sm text-green-600 mt-4 font-semibold" id="kpi-top-val">-</p>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 print:block mt-6">
+                <!-- Summary Text -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col print:border-gray-300 lg:col-span-1">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="pie-chart" class="w-5 h-5 text-slate-500"></i>
+                        สรุปภาพรวม (Executive View)
+                    </h2>
+                    
+                    <div id="summary-card" class="mb-6 p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                        <div class="flex items-center gap-2 mb-1">
+                            <i id="summary-icon" data-lucide="info" class="w-5 h-5 text-slate-600"></i>
+                            <span id="summary-title" class="font-bold text-slate-800">รอการประมวลผล...</span>
+                        </div>
+                        <p id="summary-desc" class="text-xs text-slate-600 ml-7 leading-relaxed">
+                            ระบบกำลังแสดงข้อมูล...
+                        </p>
+                    </div>
+                </div>
+                
+                 <!-- Chart -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4">กราฟเปรียบเทียบ Top 5 (Target vs Actual)</h2>
+                    <div id="monthly-chart-container" class="h-48 w-full flex items-end justify-start space-x-6 px-2 overflow-x-auto custom-scrollbar pb-2"></div>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mt-6 print:shadow-none print:border-gray-300">
+                <div class="p-5 border-b border-slate-100 bg-slate-50/50">
+                    <h2 class="text-lg font-bold text-slate-800">รายละเอียดรายฝ่าย</h2>
+                </div>
+                
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse" id="data-table">
+                        <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
+                            <tr>
+                                <th class="p-4 font-semibold">อันดับ</th>
+                                <th class="p-4 font-semibold">ฝ่ายขาย / ทีม</th>
+                                <th class="p-4 font-semibold text-right">เป้าหมาย</th>
+                                <th class="p-4 font-semibold text-right">ผลงานจริง</th>
+                                <th class="p-4 font-semibold text-center">%</th>
+                                <th class="p-4 font-semibold text-center">สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white" id="table-body">
+                            <!-- Data Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Logic -->
+    <script>
+        // CONFIG
+        const SHEET_ID = '16q3EZt48isOrnvh6s0sET5WQtAPB_zsUXZ2TTUODT5I';
+        const MONTHS = [
+            { name: "ม.ค.", full: "มกราคม" }, { name: "ก.พ.", full: "กุมภาพันธ์" }, 
+            { name: "มี.ค.", full: "มีนาคม" }, { name: "เม.ย.", full: "เมษายน" }, 
+            { name: "พ.ค.", full: "พฤษภาคม" }, { name: "มิ.ย.", full: "มิถุนายน" }, 
+            { name: "ก.ค.", full: "กรกฎาคม" }, { name: "ส.ค.", full: "สิงหาคม" }, 
+            { name: "ก.ย.", full: "กันยายน" }, { name: "ต.ค.", full: "ตุลาคม" }, 
+            { name: "พ.ย.", full: "พฤศจิกายน" }, { name: "ธ.ค.", full: "ธันวาคม" }
+        ];
+
+        // MOCK DATA (Fallback when Sheet connection fails)
+        const MOCK_TEAMS_BASE = [
+            { name: "ฝ่ายฯ 6 สง่า บัวไข", branch: "ศรีสะเกษ", target: 1500000, baseActual: 1800000 },
+            { name: "ฝ่ายฯ 4 ประดิษฐ์ แสงชัย", branch: "เขมราฐ", target: 1200000, baseActual: 1500000 },
+            { name: "ฝ่ายฯ 71 ไพบูรณ์ ราตรี", branch: "เดชอุดม", target: 1500000, baseActual: 1300000 },
+            { name: "ฝ่ายฯ 111 พิมพ์ลดา", branch: "รัตนบุรี", target: 1000000, baseActual: 1050000 },
+            { name: "ฝ่ายฯ 23 วิรันต์โรจน์", branch: "อุบลราชธานี", target: 1200000, baseActual: 980000 },
+            { name: "ฝ่ายฯ 42 ตรีชญาฎาฉ์", branch: "ปราสาท", target: 1000000, baseActual: 1100000 },
+            { name: "ฝ่ายฯ 82 บังอร พงค์พีระ", branch: "รัตนบุรี", target: 900000, baseActual: 920000 },
+            { name: "ฝ่ายฯ 130 อุครพัฒน์", branch: "ขุขันธ์", target: 1000000, baseActual: 890000 },
+            { name: "ฝ่ายฯ 24 สุพิชฌาย์", branch: "สุรินทร์", target: 1000000, baseActual: 850000 },
+            { name: "ฝ่ายฯ 81 ญาณวุฒิ", branch: "เขื่องใน", target: 800000, baseActual: 750000 },
+        ];
+        
+        // State
+        let currentMode = 'year'; // year | month
+        let isOnline = true; // Track fallback status
+
+        // Utils
+        const formatCurrency = (num) => new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', maximumFractionDigits: 0 }).format(num);
+        const formatNum = (num) => new Intl.NumberFormat('th-TH', { maximumFractionDigits: 0 }).format(num);
+
+        function showToast(title, message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            const titleEl = document.getElementById('toast-title');
+            const msgEl = document.getElementById('toast-message');
+
+            titleEl.innerText = title;
+            msgEl.innerText = message;
+            
+            if(type === 'error') {
+                icon.className = "w-5 h-5 text-red-400";
+                icon.setAttribute('data-lucide', 'alert-circle');
+            } else if(type === 'success') {
+                icon.className = "w-5 h-5 text-green-400";
+                icon.setAttribute('data-lucide', 'check-circle');
+            } else {
+                icon.className = "w-5 h-5 text-blue-400";
+                icon.setAttribute('data-lucide', 'info');
+            }
+            lucide.createIcons();
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 4000);
+        }
+
+        // --- View Management ---
+
+        function initYearView() {
+            const grid = document.getElementById('month-grid-container');
+            const chartContainer = document.getElementById('year-chart-container');
+            let gridHtml = '';
+            let chartHtml = '';
+
+            // Generate Month Grid
+            MONTHS.forEach((m, i) => {
+                // Determine style based on current date (simulation)
+                const isPast = i < 5; 
+                const isCurrent = i === 5; // June
+                
+                let badgeClass = "bg-slate-50 text-slate-400 border-slate-200 hover:border-blue-300 hover:bg-blue-50";
+                let statusDot = "";
+                
+                if (isPast) {
+                    badgeClass = "bg-white text-slate-700 border-slate-200 shadow-sm hover:border-blue-500 hover:shadow-md cursor-pointer group";
+                    statusDot = `<div class="absolute top-3 right-3 w-2 h-2 rounded-full bg-green-500"></div>`;
+                } else if (isCurrent) {
+                    badgeClass = "bg-blue-600 text-white shadow-lg ring-2 ring-blue-200 ring-offset-2 cursor-pointer transform hover:-translate-y-1 transition-all";
+                    statusDot = `<div class="absolute top-3 right-3 w-2 h-2 rounded-full bg-white animate-pulse"></div>`;
+                }
+
+                gridHtml += `
+                    <div onclick="openMonth(${i})" class="${badgeClass} rounded-xl p-6 border transition-all relative select-none">
+                        ${statusDot}
+                        <h3 class="text-xl font-bold mb-1">${m.full}</h3>
+                        <p class="text-xs opacity-70">2569</p>
+                        <div class="mt-4 flex items-center justify-between opacity-80 text-xs">
+                            <span>แตะเพื่อดูข้อมูล</span>
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                `;
+
+                // Generate Year Chart Bar
+                // Simulate trend
+                const target = 100;
+                let actual = 0;
+                if(i < 6) actual = 80 + Math.random() * 30; // Random data for past months
+
+                const hTarget = 60; // Fixed visual height for target line
+                const hActual = (actual / 150) * 100;
+                const barColor = actual >= target ? 'bg-green-500' : 'bg-blue-500';
+                
+                chartHtml += `
+                <div class="flex flex-col items-center flex-1 group h-full justify-end cursor-pointer" onclick="openMonth(${i})">
+                    <div class="relative w-full flex justify-center items-end h-[90%] space-x-1">
+                        <div class="w-full mx-1 ${i > 5 ? 'bg-slate-100' : barColor} rounded-t-sm relative transition-all group-hover:opacity-80" style="height: ${i > 5 ? 10 : hActual}%"></div>
+                    </div>
+                    <div class="mt-2 text-[10px] sm:text-xs text-slate-500 font-medium pt-1 w-full text-center truncate">
+                        ${m.name}
+                    </div>
+                </div>`;
+            });
+
+            grid.innerHTML = gridHtml;
+            chartContainer.innerHTML = chartHtml;
+            lucide.createIcons();
+        }
+
+        function showYearView() {
+            document.getElementById('year-view').classList.remove('hidden');
+            document.getElementById('month-view').classList.add('hidden');
+            document.getElementById('btn-back').classList.add('hidden');
+            currentMode = 'year';
+            window.scrollTo(0, 0);
+        }
+
+        async function openMonth(index) {
+            const m = MONTHS[index];
+            currentMode = 'month';
+            
+            // UI Switch
+            document.getElementById('year-view').classList.add('hidden');
+            document.getElementById('month-view').classList.remove('hidden');
+            document.getElementById('btn-back').classList.remove('hidden');
+            
+            // Set Header Info
+            document.getElementById('current-month-badge').innerText = m.name;
+            document.getElementById('current-month-title').innerText = `${m.full} 2569`;
+            document.getElementById('current-sheet-name').innerText = m.name;
+
+            // Fetch Data
+            await fetchData(m.name, index);
+            
+            window.scrollTo(0, 0);
+        }
+
+        // --- Data Fetching & Fallback ---
+
+        async function fetchData(sheetName, monthIndex) {
+            const loading = document.getElementById('loading');
+            loading.classList.remove('hidden');
+            
+            try {
+                // Try fetching from Google Sheet
+                const query = `SELECT A, B, C, D`; 
+                const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Connection failed");
+                
+                const text = await response.text();
+                // Check if valid JSONP/JSON response
+                if (!text.includes("google.visualization.Query.setResponse")) throw new Error("Invalid sheet response");
+                
+                const jsonString = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
+                const json = JSON.parse(jsonString);
+
+                // If successful
+                updateConnectionStatus(true);
+                processData(json, true);
+
+            } catch (error) {
+                console.warn("Fetch failed, switching to Mock Data:", error);
+                
+                // Fallback Logic
+                updateConnectionStatus(false);
+                showToast('การเชื่อมต่อขัดข้อง', 'ระบบกำลังแสดงข้อมูลตัวอย่าง (Demo Data) แทน', 'error');
+                
+                // Generate Mock Data based on month index to make it look different per month
+                const mockData = generateMockData(monthIndex);
+                updateUI(mockData.teams, mockData.totalTarget, mockData.totalActual, mockData.activeCount);
+                
+            } finally {
+                loading.classList.add('hidden');
+            }
+        }
+
+        function updateConnectionStatus(online) {
+            const statusBadge = document.getElementById('connection-status');
+            if (online) {
+                statusBadge.innerHTML = `<i data-lucide="wifi" class="w-3 h-3"></i> Live Data`;
+                statusBadge.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200";
+            } else {
+                statusBadge.innerHTML = `<i data-lucide="cloud-off" class="w-3 h-3"></i> Demo Mode`;
+                statusBadge.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200";
+            }
+            lucide.createIcons();
+        }
+
+        function generateMockData(monthIndex) {
+            // Seed random variation
+            const factor = 0.8 + (Math.sin(monthIndex) * 0.4); // vary between 0.4 and 1.2
+            let teams = MOCK_TEAMS_BASE.map(t => ({
+                name: t.name,
+                branch: t.branch,
+                target: t.target,
+                actual: t.baseActual * factor * (0.9 + Math.random() * 0.2) // +/- 10% random
+            }));
+            
+            // Calculate totals
+            let totalTarget = 0;
+            let totalActual = 0;
+            let activeCount = 0;
+            teams.forEach(t => {
+                totalTarget += t.target;
+                totalActual += t.actual;
+                if(t.actual > 0) activeCount++;
+            });
+            
+            teams.sort((a,b) => b.actual - a.actual);
+            
+            return { teams, totalTarget, totalActual, activeCount };
+        }
+
+        function processData(json) {
+            const rows = json.table.rows;
+            let teams = [];
+            let totalTarget = 0;
+            let totalActual = 0;
+            let activeCount = 0;
+
+            rows.forEach((row) => {
+                if (!row.c || !row.c[0]) return;
+                const name = row.c[0]?.v || "";
+                const branch = row.c[1]?.v || "-";
+                const target = parseFloat(row.c[2]?.v) || 0;
+                const actual = parseFloat(row.c[3]?.v) || 0;
+
+                if (typeof row.c[2]?.v === 'string' || name.includes("รวม") || name.includes("Total")) return;
+
+                if (actual > 0) activeCount++;
+                totalTarget += target;
+                totalActual += actual;
+                teams.push({ name, branch, target, actual });
+            });
+
+            teams.sort((a, b) => b.actual - a.actual);
+            updateUI(teams, totalTarget, totalActual, activeCount);
+        }
+
+        function updateUI(teams, totalTarget, totalActual, activeCount) {
+            // 1. KPI Cards
+            document.getElementById('kpi-fyp').innerText = formatNum(totalActual);
+            document.getElementById('kpi-target').innerText = formatNum(totalTarget);
+            document.getElementById('kpi-active-units').innerText = `${activeCount} / ${teams.length}`;
+            document.getElementById('kpi-active-desc').innerText = `Active ${((activeCount/Math.max(teams.length,1))*100).toFixed(0)}%`;
+
+            const percent = totalTarget > 0 ? (totalActual / totalTarget) * 100 : 0;
+            const percentEl = document.getElementById('kpi-percent');
+            const progressBar = document.getElementById('progress-bar');
+
+            percentEl.innerText = percent.toFixed(1) + '%';
+            
+            let colorClass = "text-red-600";
+            let bgClass = "bg-red-500";
+            
+            if (percent >= 100) { colorClass = "text-green-600"; bgClass = "bg-green-500"; }
+            else if (percent >= 80) { colorClass = "text-yellow-600"; bgClass = "bg-yellow-500"; }
+            
+            percentEl.className = `text-2xl font-bold mt-2 ${colorClass}`;
+            progressBar.className = `${bgClass} h-2 rounded-full transition-all duration-500`;
+            progressBar.style.width = Math.min(percent, 100) + '%';
+
+            // Top Team
+            if (teams.length > 0) {
+                document.getElementById('kpi-top-team').innerText = teams[0].name;
+                document.getElementById('kpi-top-val').innerText = formatCurrency(teams[0].actual);
+            } else {
+                document.getElementById('kpi-top-team').innerText = "-";
+                document.getElementById('kpi-top-val').innerText = "-";
+            }
+
+            // 2. Summary & Chart
+            updateSummary(percent, totalTarget, totalActual);
+            renderMonthlyChart(teams.slice(0, 5)); // Top 5 chart
+
+            // 3. Table
+            renderTable(teams);
+        }
+        
+        function updateSummary(percent, totalTarget, totalActual) {
+            const summaryTitle = document.getElementById('summary-title');
+            const summaryIcon = document.getElementById('summary-icon');
+            const summaryDesc = document.getElementById('summary-desc');
+            const summaryCard = document.getElementById('summary-card');
+
+            if (percent >= 100) {
+                summaryCard.className = "mb-6 p-4 bg-green-50 border border-green-100 rounded-xl";
+                summaryTitle.innerText = "ยอดเยี่ยม (ทะลุเป้า)";
+                summaryTitle.className = "font-bold text-green-800";
+                summaryIcon.className = "w-5 h-5 text-green-600";
+                summaryIcon.setAttribute('data-lucide', 'trophy');
+                summaryDesc.innerText = `ผลงานโดยรวมยอดเยี่ยม ทะลุเป้าหมายไปแล้ว ${formatNum(totalActual - totalTarget)} บาท`;
+            } else if (percent >= 80) {
+                summaryCard.className = "mb-6 p-4 bg-yellow-50 border border-yellow-100 rounded-xl";
+                summaryTitle.innerText = "ใกล้เคียงเป้าหมาย";
+                summaryTitle.className = "font-bold text-yellow-800";
+                summaryIcon.className = "w-5 h-5 text-yellow-600";
+                summaryIcon.setAttribute('data-lucide', 'trending-up');
+                summaryDesc.innerText = `ขาดอีก ${formatNum(totalTarget - totalActual)} บาท จะถึงเป้าหมาย เร่งติดตามทีมที่มีศักยภาพ`;
+            } else {
+                summaryCard.className = "mb-6 p-4 bg-red-50 border border-red-100 rounded-xl";
+                summaryTitle.innerText = "ต่ำกว่าเกณฑ์";
+                summaryTitle.className = "font-bold text-red-800";
+                summaryIcon.className = "w-5 h-5 text-red-600";
+                summaryIcon.setAttribute('data-lucide', 'alert-circle');
+                summaryDesc.innerText = `ผลงานรวมยังห่างจากเป้า ${formatNum(totalTarget - totalActual)} บาท ต้องปรับกลยุทธ์เร่งด่วน`;
+            }
+            lucide.createIcons();
+        }
+
+        function renderMonthlyChart(teams) {
+            const container = document.getElementById('monthly-chart-container');
+            let html = '';
+            
+            // Max value for scaling
+            const maxVal = Math.max(...teams.map(t => Math.max(t.target, t.actual)), 1);
+
+            teams.forEach(team => {
+                const hTarget = (team.target / maxVal) * 100;
+                const hActual = (team.actual / maxVal) * 100;
+                const color = team.actual >= team.target ? 'bg-green-500' : 'bg-blue-500';
+
+                html += `
+                <div class="flex flex-col items-center justify-end h-full group min-w-[60px] flex-shrink-0">
+                    <div class="relative w-8 sm:w-12 flex justify-center items-end h-[85%] space-x-1">
+                        <div class="w-1/2 bg-slate-200 rounded-t-sm" style="height: ${hTarget}%" title="เป้า: ${formatNum(team.target)}"></div>
+                        <div class="w-1/2 ${color} rounded-t-sm hover:opacity-80 transition-all" style="height: ${hActual}%" title="จริง: ${formatNum(team.actual)}"></div>
+                    </div>
+                    <div class="h-[15%] flex items-start pt-2 w-full">
+                         <p class="text-[10px] text-slate-500 truncate text-center w-full">${team.name.split(' ')[1] || team.name.substr(0,8)}</p>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderTable(teams) {
+            const tbody = document.getElementById('table-body');
+            let tableHtml = '';
+            
+            teams.forEach((team, index) => {
+                const p = team.target > 0 ? (team.actual / team.target) * 100 : 0;
+                let statusBadge = '';
+                if (p >= 100) statusBadge = `<span class="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-bold">เข้าเป้า</span>`;
+                else if (p >= 70) statusBadge = `<span class="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs">ใกล้เคียง</span>`;
+                else statusBadge = `<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-xs">ต่ำกว่า</span>`;
+
+                tableHtml += `
+                    <tr class="hover:bg-blue-50/50 transition-colors border-b border-slate-50 last:border-none">
+                        <td class="p-4 text-sm text-slate-500 font-mono">${index + 1}</td>
+                        <td class="p-4 text-sm font-medium text-slate-900">${team.name} <span class="text-xs text-slate-400 block">${team.branch}</span></td>
+                        <td class="p-4 text-sm text-slate-500 text-right font-mono">${formatNum(team.target)}</td>
+                        <td class="p-4 text-sm text-slate-900 font-semibold text-right font-mono">${formatNum(team.actual)}</td>
+                        <td class="p-4 text-sm text-center font-medium ${p >= 100 ? 'text-green-600' : ''}">${p.toFixed(0)}%</td>
+                        <td class="p-4 text-center">${statusBadge}</td>
+                    </tr>
+                `;
+            });
+
+            if (teams.length === 0) {
+                tableHtml = '<tr><td colspan="6" class="p-8 text-center text-slate-400">ไม่พบข้อมูลในเดือนนี้</td></tr>';
+            }
+            tbody.innerHTML = tableHtml;
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initYearView();
+        });
+
+    </script>
+</body>
+</html>
